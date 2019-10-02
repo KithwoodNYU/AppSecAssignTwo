@@ -9,7 +9,6 @@ app = Flask(__name__)
 def home():
     return "Hello, Flask!"
 
-
 @app.route("/hello/<name>")
 def hello_there(name):
     now = datetime.now()
