@@ -1,27 +1,31 @@
-from flask import Flask
+from flask import Flask, render_template, redirect
 import re
 from datetime import datetime
 
 app = Flask(__name__)
 
+registration_info = {}
 
 @app.route("/")
 def home():
-    return "Hello, Flask!"
-
-@app.route("/hello/<name>")
-def hello_there(name):
-    now = datetime.now()
-    formatted_now = now.strftime("%A, %d %B, %Y at %X")
-
-    # Filter the name argument to letters only using regular expressions. URL arguments
-    # can contain arbitrary text, so we restrict to safe characters only.
-    match_object = re.match("[a-zA-Z]+", name)
-
-    if match_object:
-        clean_name = match_object.group(0)
+    if(len(registration_info) == 0):
+        return redirect("/register")
     else:
-        clean_name = "Friend"
+        return redirect("/login")
 
-    content = "Hello there, " + clean_name + "! It's " + formatted_now
-    return content
+@app.route("/api/data")
+def get_data():
+    return app.send_static_file("data.json")
+
+@app.route("/about")
+def about():
+    return render_template("about.html")
+
+@app.route("/register")
+def register():
+    return render_template("register.html")
+
+@app.route("/login")
+def login():
+    return render_template("login.html")
+
