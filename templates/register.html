@@ -3,10 +3,21 @@
 Register
 {% endblock %}
 {% block content %}
-<p>A place to register</p>
-<label for="fname">First Name</label>
-<input id="fname" type="text"/><br>
-<label for="lname">Last Name</label>
-<input id="lname" type="text"/><br>
-<button id="regsubmit" type="submit">Register</button>
+    <h4>Register</h4>
+    <br>
+    {% from "_formhelpers.html" import render_field %}
+    <form method=post action="/register">
+        {{ form.csrf_token }}
+        <dl>
+            {{render_field(form.username)}}
+            {{render_field(form.password)}}
+            {{render_field(form.phone2fa)}}
+        </dl>
+        <p><input type=submit value=Register></p>
+    </form>
+    <div>
+    {% if error %}
+        <p class="error"><strong>Error:</strong>{{error}}</p>
+    {% endif %}
+
 {% endblock %}

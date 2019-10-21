@@ -1,31 +1,90 @@
-from flask import Flask, render_template, redirect
+from flask import Flask, render_template, redirect, url_for, session, flash, request
+from flask_wtf import FlaskForm, CSRFProtect
+from wtforms import StringField, PasswordField, validators
 import re
+import os
 from datetime import datetime
+import app_forms
 
 app = Flask(__name__)
+csrf = CSRFProtect(app)
 
-registration_info = {}
+SECRET_KEY = os.urandom(32)
+app.config['SECRET_KEY'] = SECRET_KEY
+registration_info = []
+validate_success = 1
+validate_login = 0
+validate_2fa = -1
 
-@app.route("/")
+@app.route('/')
 def home():
     if(len(registration_info) == 0):
-        return redirect("/register")
+        return redirect('/register')
     else:
-        return redirect("/login")
+        return redirect(url_for('login'))
 
-@app.route("/api/data")
+@app.route('/api/data')
 def get_data():
-    return app.send_static_file("data.json")
+    return app.send_static_file('data.json')
 
-@app.route("/about")
+@app.route('/about')
 def about():
-    return render_template("about.html")
+    return render_template('about.html')
 
-@app.route("/register")
+@app.route('/register', methods=['GET','POST'])
 def register():
-    return render_template("register.html")
+    try:
+        form=app_forms.RegistrationForm(request.form)
 
-@app.route("/login")
+        if request.method == 'POST' and form.validate_on_submit():
+            user = {}
+            user['username'] = form.username.data
+            user['password'] = form.password.data
+            user['twofactor'] = form.phone2fa.data
+            registration_info.append(user)
+            flash('Registration was a success')
+            return redirect(url_for('login'))
+            
+        return render_template('register.html', form=form)
+    except Exception as e:
+        return(str(e))
+
+@app.route('/login', methods=['GET', 'POST'])
 def login():
-    return render_template("login.html")
+    try:
+        form = app_forms.LoginForm(request.form)
 
+        if request.method == 'POST' and form.validate_on_submit():
+            user = {}
+            user['username'] = form.username.data
+            user['password'] = form.password.data
+            user['twofactor'] = form.phone2fa.data
+            validation = validate_user(user)
+            if validation == validate_success:
+                flash('Login was a success')
+            elif validation == validate_login:
+                flash('Incorrect')
+            else:
+                flash('Two-factor failure')
+
+            return redirect(url_for('about')) # for now
+    except Exception as e:
+        return(str(e))
+    return render_template('login.html', form=form)
+
+def validate_user(user):
+    validation_result = validate_success
+    for registered_user in registration_info:
+        if user['username'] == registered_user['username']:
+            if user['password'] == registered_user['password']:
+                if user['twofactor'] == registered_user['twofactor']:
+                    validation_result = validate_success
+                    return validation_result
+                else:
+                    validation_result = validate_2fa
+            else:
+                validation_result = validate_login
+        else:
+            validation_result = validate_login
+    
+    return validation_result
