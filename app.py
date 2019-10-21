@@ -1,4 +1,5 @@
 from flask import Flask, render_template, redirect, url_for, session, flash, request
+from flask_session import Session
 from flask_wtf import FlaskForm, CSRFProtect
 from wtforms import StringField, PasswordField, validators
 import re
@@ -7,10 +8,13 @@ from datetime import datetime
 import app_forms
 
 app = Flask(__name__)
-csrf = CSRFProtect(app)
-
 SECRET_KEY = os.urandom(32)
 app.config['SECRET_KEY'] = SECRET_KEY
+csrf = CSRFProtect(app)
+SESSION_TYPE = 'filesystem'
+app.config['SESSION_TYPE'] = SESSION_TYPE
+Session(app)
+
 registration_info = []
 validate_success = 1
 validate_login = 0
@@ -22,6 +26,15 @@ def home():
         return redirect('/register')
     else:
         return redirect(url_for('login'))
+
+@app.route('/set/')
+def set():
+    session['key'] = 'value'
+    return 'ok'
+
+@app.route('/get/')
+def get():
+    return session.get('key', 'not set')
 
 @app.route('/api/data')
 def get_data():
@@ -36,14 +49,17 @@ def register():
     try:
         form=app_forms.RegistrationForm(request.form)
 
-        if request.method == 'POST' and form.validate_on_submit():
-            user = {}
-            user['username'] = form.username.data
-            user['password'] = form.password.data
-            user['twofactor'] = form.phone2fa.data
-            registration_info.append(user)
-            flash('Registration was a success')
-            return redirect(url_for('login'))
+        if request.method == 'POST':
+            if form.validate_on_submit():
+                user = {}
+                user['username'] = form.username.data
+                user['password'] = form.password.data
+                user['twofactor'] = form.phone2fa.data
+                registration_info.append(user)
+                flash('Registration was a success', 'success')
+                return redirect(url_for('login'))
+            else:
+                flash('Registration was a faulure', 'success')
             
         return render_template('register.html', form=form)
     except Exception as e:
@@ -61,11 +77,11 @@ def login():
             user['twofactor'] = form.phone2fa.data
             validation = validate_user(user)
             if validation == validate_success:
-                flash('Login was a success')
+                flash('Login was a success', 'result')
             elif validation == validate_login:
-                flash('Incorrect')
+                flash('Incorrect', 'result')
             else:
-                flash('Two-factor failure')
+                flash('Two-factor failure', 'result')
 
             return redirect(url_for('about')) # for now
     except Exception as e:
