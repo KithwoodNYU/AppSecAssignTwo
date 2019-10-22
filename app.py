@@ -16,6 +16,8 @@ app.config['SESSION_TYPE'] = SESSION_TYPE
 Session(app)
 
 registration_info = []
+logged_in_user = []
+
 validate_success = 1
 validate_login = 0
 validate_2fa = -1
@@ -71,19 +73,21 @@ def login():
         form = app_forms.LoginForm(request.form)
 
         if request.method == 'POST' and form.validate_on_submit():
+            logged_in_user = []
             user = {}
             user['username'] = form.username.data
             user['password'] = form.password.data
             user['twofactor'] = form.phone2fa.data
             validation = validate_user(user)
             if validation == validate_success:
+                logged_in_user = user
                 flash('Login was a success', 'result')
             elif validation == validate_login:
                 flash('Incorrect', 'result')
             else:
                 flash('Two-factor failure', 'result')
 
-            return redirect(url_for('about')) # for now
+            return redirect(url_for('spell_check')) 
     except Exception as e:
         return(str(e))
     return render_template('login.html', form=form)
@@ -104,3 +108,27 @@ def validate_user(user):
             validation_result = validate_login
     
     return validation_result
+
+@app.route('/spell_check', methods=['GET', 'POST'])
+def spell_check():
+    try:
+        form = app_forms.SpellCheckForm(request.form)
+
+        if request.method == 'POST' and form.validate_on_submit():
+            return redirect(url_for('sc_results')) 
+
+    except Exception as e:
+        return(str(e))
+    return render_template('spell_check.html', form=form)
+
+@app.route('/sc_results', methods=['GET'])
+def sc_results():
+    try:
+        form = app_forms.SpellCheckResultsForm(request.form)
+
+        if request.method == 'POST' and form.validate_on_submit():
+            return redirect(url_for('spell_check'))
+
+    except Exception as e:
+        return(str(e))
+    return render_template('sc_results.html', form=form)
