@@ -72,6 +72,8 @@ def register():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    if len(registration_info) == 0:
+        return redirect('/register')
     try:
         form = app_forms.LoginForm(request.form)
 
