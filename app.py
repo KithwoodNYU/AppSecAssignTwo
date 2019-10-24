@@ -94,7 +94,8 @@ def login():
 
             return redirect(url_for('spell_check')) 
     except Exception as e:
-        return(str(e))
+        flash('Incorrect : '+ str(e), 'result')
+        
     return render_template('login.html', form=form)
 
 def validate_user(user):
