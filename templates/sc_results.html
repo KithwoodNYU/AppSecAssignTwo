@@ -9,7 +9,7 @@ Spell Check
     <form method=post action="/spell_check">
         {{ form.csrf_token }}
         <dl>
-            {{render_field(form.textout)}}
+            {{render_field(form.inputtext)}}
         </dl>
         <dl>
             {{render_field(form.misspelled)}}

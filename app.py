@@ -4,6 +4,7 @@ from flask_wtf import FlaskForm, CSRFProtect
 from wtforms import StringField, PasswordField, validators
 import re
 import os
+import subprocess
 from datetime import datetime
 import app_forms
 
@@ -24,10 +25,12 @@ validate_2fa = -1
 
 @app.route('/')
 def home():
-    if(len(registration_info) == 0):
+    if len(registration_info) == 0:
         return redirect('/register')
-    else:
+    elif len(logged_in_user) == 0:
         return redirect(url_for('login'))
+    else:
+        return redirect(url_for('spell_check'))
 
 @app.route('/set/')
 def set():
@@ -73,14 +76,14 @@ def login():
         form = app_forms.LoginForm(request.form)
 
         if request.method == 'POST' and form.validate_on_submit():
-            logged_in_user = []
+            logged_in_user.clear()
             user = {}
             user['username'] = form.username.data
             user['password'] = form.password.data
             user['twofactor'] = form.phone2fa.data
             validation = validate_user(user)
             if validation == validate_success:
-                logged_in_user = user
+                logged_in_user.append(user)
                 flash('Login was a success', 'result')
             elif validation == validate_login:
                 flash('Incorrect', 'result')
@@ -111,11 +114,30 @@ def validate_user(user):
 
 @app.route('/spell_check', methods=['GET', 'POST'])
 def spell_check():
+    if len(registration_info) == 0:
+        return redirect('/register')
+    elif len(logged_in_user) == 0:
+        return redirect(url_for('login'))
+
     try:
         form = app_forms.SpellCheckForm(request.form)
 
         if request.method == 'POST' and form.validate_on_submit():
-            return redirect(url_for('sc_results')) 
+            lines = form.inputtext.data.split('\n')
+            f = open('check_words.txt', 'w')
+            f.writelines(lines)
+            f.close()
+
+            p = subprocess.run(['./a.out', './check_words.txt', './wordlist.txt'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            msg = '\n'.join(lines)
+            sc_form = app_forms.SpellCheckResultsForm()
+            sc_form.inputtext.data = msg
+            msg = p.stdout.decode('utf-8')
+            msg = msg.replace('\n', ', ')
+            msg = msg.rstrip(', ')
+            
+            sc_form.misspelled.data = msg
+            return render_template('sc_results.html', form=sc_form) 
 
     except Exception as e:
         return(str(e))
@@ -123,6 +145,11 @@ def spell_check():
 
 @app.route('/sc_results', methods=['GET'])
 def sc_results():
+    if len(registration_info) == 0:
+        return redirect('/register')
+    elif len(logged_in_user) == 0:
+        return redirect(url_for('login'))
+
     try:
         form = app_forms.SpellCheckResultsForm(request.form)
 
