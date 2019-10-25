@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, TextAreaField, validators
+from wtforms import StringField, PasswordField, TextAreaField, HiddenField, validators
 
 class RegistrationForm(FlaskForm):
     username = StringField('Username', validators=[validators.Length(min=4, max=25), validators.DataRequired()], id='uname')
@@ -12,6 +12,7 @@ class LoginForm(FlaskForm):
     username = StringField('Username', validators=[validators.Length(min=4, max=199), validators.DataRequired()], id='uname')
     password = PasswordField('Password', validators=[validators.Length(min=4, max=199), validators.DataRequired()], id='pword')
     phone2fa = StringField('Two factor phone number', id='2fa')
+    stupid = HiddenField('Incorrect', id='result')
 
 class SpellCheckForm(FlaskForm):
     inputtext = TextAreaField('Input Text', validators=[validators.DataRequired()], id='inputtext')
