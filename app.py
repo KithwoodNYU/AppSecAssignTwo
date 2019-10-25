@@ -90,7 +90,7 @@ def login():
             elif validation == validate_login:
                 flash('Incorrect username or password', 'result')
             else:
-                flash('Two-factor failure', 'result')
+                flash('Two-factor authentication failure', 'result')
 
             return redirect(url_for('spell_check')) 
     except Exception as e:
