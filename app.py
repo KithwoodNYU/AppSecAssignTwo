@@ -88,7 +88,7 @@ def login():
                 logged_in_user.append(user)
                 flash('Login was a success', 'result')
             elif validation == validate_login:
-                flash('Incorrect', 'result')
+                flash('Incorrect username or password', 'result')
             else:
                 flash('Two-factor failure', 'result')
 
