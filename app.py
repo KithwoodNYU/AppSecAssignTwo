@@ -72,8 +72,8 @@ def register():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if len(registration_info) == 0:
-        return redirect('/register')
+    #if len(registration_info) == 0:
+    #    return redirect('/register')
     try:
         form = app_forms.LoginForm(request.form)
 
@@ -99,7 +99,7 @@ def login():
     return render_template('login.html', form=form)
 
 def validate_user(user):
-    validation_result = validate_success
+    validation_result = validate_login
     for registered_user in registration_info:
         if user['username'] == registered_user['username']:
             if user['password'] == registered_user['password']:
