@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, session, flash, request
+from flask import Flask, render_template, redirect, url_for, session, flash, request, make_response
 from flask_session import Session
 from flask_wtf import FlaskForm, CSRFProtect
 from wtforms import StringField, PasswordField, validators
@@ -15,6 +15,9 @@ csrf = CSRFProtect(app)
 SESSION_TYPE = 'filesystem'
 app.config['SESSION_TYPE'] = SESSION_TYPE
 Session(app)
+app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 registration_info = []
 logged_in_user = []
@@ -22,15 +25,16 @@ logged_in_user = []
 validate_success = 1
 validate_login = 0
 validate_2fa = -1
+headers = {"Content-Security-Policy":"default-src 'self'", "X-Frame-Options":"deny", "X-XSS-Protection":"1;mode=block"}
 
 @app.route('/')
 def home():
     if len(registration_info) == 0:
-        return redirect('/register')
+        return redirect('/register'), 302, headers
     elif len(logged_in_user) == 0:
-        return redirect(url_for('login'))
+        return redirect(url_for('login')), 302, headers
     else:
-        return redirect(url_for('spell_check'))
+        return redirect(url_for('spell_check')), 302, headers
 
 @app.route('/set/')
 def set():
@@ -47,7 +51,14 @@ def get_data():
 
 @app.route('/about')
 def about():
-    return render_template('about.html')
+    r = make_response(render_template('about.html'))
+    r.headers["Content-Security-Policy"] = "default-src 'self'"
+    r.headers["Content-Security-Policy"] = "frame-ancestors 'none'"
+    r.headers["X-Content-Type-Options"] = "nosniff"
+    r.headers["X-Frame-Options"] = "DENY"
+    r.headers["X-XSS-Protection"] = "1; mode=block"
+    
+    return r
 
 @app.route('/register', methods=['GET','POST'])
 def register():
@@ -62,13 +73,24 @@ def register():
                 user['twofactor'] = form.phone2fa.data
                 registration_info.append(user)
                 flash('Registration was a success', 'success')
-                return redirect(url_for('login'))
+                return redirect(url_for('login')), 302, headers
             else:
                 flash('Registration was a faulure', 'success')
-            
-        return render_template('register.html', form=form)
+        r = make_response(render_template('register.html', form=form))
+        r.headers["Content-Security-Policy"] = "default-src 'self'"
+        r.headers["Content-Security-Policy"] = "frame-ancestors 'none'"
+        r.headers["X-Content-Type-Options"] = "nosniff"
+        r.headers["X-Frame-Options"] = "deny"
+        r.headers["X-XSS-Protection"] = "1; mode=block"    
+        return r
     except Exception as e:
-        return(str(e))
+        r = make_response(str(e), 500)
+        r.headers["Content-Security-Policy"] = "default-src 'self'"
+        r.headers["Content-Security-Policy"] = "frame-ancestors 'none'"
+        r.headers["X-Content-Type-Options"] = "nosniff"
+        r.headers["X-Frame-Options"] = "deny"
+        r.headers["X-XSS-Protection"] = "1; mode=block"    
+        return r
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -92,11 +114,23 @@ def login():
             else:
                 flash('Two-factor authentication failure', 'result')
 
-            return redirect(url_for('spell_check')) 
+            return redirect(url_for('spell_check')), 302, headers
     except Exception as e:
-        flash('Incorrect : '+ str(e), 'result')
-        
-    return render_template('login.html', form=form)
+        r = make_response(str(e), 500)
+        r.headers["Content-Security-Policy"] = "default-src 'self'"
+        r.headers["Content-Security-Policy"] = "frame-ancestors 'none'"
+        r.headers["X-Content-Type-Options"] = "nosniff"
+        r.headers["X-Frame-Options"] = "deny"
+        r.headers["X-XSS-Protection"] = "1; mode=block"    
+        return r
+
+    r = make_response(render_template('login.html', form=form))
+    r.headers["Content-Security-Policy"] = "default-src 'self'"
+    r.headers["Content-Security-Policy"] = "frame-ancestors 'none'"
+    r.headers["X-Content-Type-Options"] = "nosniff"
+    r.headers["X-Frame-Options"] = "deny"
+    r.headers["X-XSS-Protection"] = "1; mode=block"   
+    return r
 
 def validate_user(user):
     validation_result = validate_login
@@ -118,9 +152,9 @@ def validate_user(user):
 @app.route('/spell_check', methods=['GET', 'POST'])
 def spell_check():
     if len(registration_info) == 0:
-        return redirect('/register')
+        return redirect('/register'), 302, headers
     elif len(logged_in_user) == 0:
-        return redirect(url_for('login'))
+        return redirect(url_for('login')), 302, headers
 
     try:
         form = app_forms.SpellCheckForm(request.form)
@@ -140,25 +174,57 @@ def spell_check():
             msg = msg.rstrip(', ')
             
             sc_form.misspelled.data = msg
-            return render_template('sc_results.html', form=sc_form) 
+            r = make_response(render_template('sc_results.html', form=sc_form))
+            r.headers["Content-Security-Policy"] = "default-src 'self'"
+            r.headers["Content-Security-Policy"] = "frame-ancestors 'none'"
+            r.headers["X-Content-Type-Options"] = "nosniff"
+            r.headers["X-Frame-Options"] = "deny"
+            r.headers["X-XSS-Protection"] = "1; mode=block"
+            return r
 
     except Exception as e:
-        return(str(e))
-    return render_template('spell_check.html', form=form)
+        r = make_response(str(e), 500)
+        r.headers["Content-Security-Policy"] = "default-src 'self'"
+        r.headers["Content-Security-Policy"] = "frame-ancestors 'none'"
+        r.headers["X-Content-Type-Options"] = "nosniff"
+        r.headers["X-Frame-Options"] = "deny"
+        r.headers["X-XSS-Protection"] = "1; mode=block"    
+        return r
+
+    r = make_response(render_template('spell_check.html', form=form))
+    r.headers["Content-Security-Policy"] = "default-src 'self'"
+    r.headers["Content-Security-Policy"] = "frame-ancestors 'none'"
+    r.headers["X-Content-Type-Options"] = "nosniff"
+    r.headers["X-Frame-Options"] = "deny"
+    r.headers["X-XSS-Protection"] = "1; mode=block"
+    return r
 
 @app.route('/sc_results', methods=['GET'])
 def sc_results():
     if len(registration_info) == 0:
-        return redirect('/register')
+        return redirect('/register'), 302, headers
     elif len(logged_in_user) == 0:
-        return redirect(url_for('login'))
+        return redirect(url_for('login')), 302, headers
 
     try:
         form = app_forms.SpellCheckResultsForm(request.form)
 
         if request.method == 'POST' and form.validate_on_submit():
-            return redirect(url_for('spell_check'))
+            return redirect(url_for('spell_check')), 302, headers
 
     except Exception as e:
-        return(str(e))
-    return render_template('sc_results.html', form=form)
+        r = make_response(str(e), 500)
+        r.headers["Content-Security-Policy"] = "default-src 'self'"
+        r.headers["Content-Security-Policy"] = "frame-ancestors 'none'"
+        r.headers["X-Content-Type-Options"] = "nosniff"
+        r.headers["X-Frame-Options"] = "deny"
+        r.headers["X-XSS-Protection"] = "1; mode=block"    
+        return r
+    
+    r = make_response(render_template('sc_results.html', form=form))
+    r.headers["Content-Security-Policy"] = "default-src 'self'"
+    r.headers["Content-Security-Policy"] = "frame-ancestors 'none'"
+    r.headers["X-Content-Type-Options"] = "nosniff"
+    r.headers["X-Frame-Options"] = "deny"
+    r.headers["X-XSS-Protection"] = "1; mode=block"
+    return r
