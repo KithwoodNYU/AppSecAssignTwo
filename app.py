@@ -25,7 +25,21 @@ logged_in_user = []
 validate_success = 1
 validate_login = 0
 validate_2fa = -1
-headers = {"Content-Security-Policy":"default-src 'self'", "X-Frame-Options":"deny", "X-XSS-Protection":"1;mode=block"}
+headers = {"Content-Security-Policy":"default-src 'self'",
+            "Content-Security-Policy":"frame-ancestors 'none'",
+            "Content-Security-Policy":"worker-src 'self'",
+            "Content-Security-Policy":"script-src 'self'",
+            "Content-Security-Policy":"style-src 'self'",
+            "Content-Security-Policy":"img-src 'none'",
+            "Content-Security-Policy":"connect-src 'self'",
+            "Content-Security-Policy":"font-src 'self'",
+            "Content-Security-Policy":"media-src 'self'",
+            "Content-Security-Policy":"manifest-src 'self'",
+            "Content-Security-Policy":"objec-src 'self'",
+            "Content-Security-Policy":"prefetch-src 'self'",
+            "X-Content-Type-Options":"nosniff", 
+            "X-Frame-Options":"DENY", 
+            "X-XSS-Protection":"1; mode=block"}
 
 @app.route('/')
 def home():
@@ -51,13 +65,8 @@ def get_data():
 
 @app.route('/about')
 def about():
-    r = make_response(render_template('about.html'))
-    r.headers["Content-Security-Policy"] = "default-src 'self'"
-    r.headers["Content-Security-Policy"] = "frame-ancestors 'none'"
-    r.headers["X-Content-Type-Options"] = "nosniff"
-    r.headers["X-Frame-Options"] = "DENY"
-    r.headers["X-XSS-Protection"] = "1; mode=block"
-    
+    r = CreateResponse(render_template('about.html'))
+
     return r
 
 @app.route('/register', methods=['GET','POST'])
@@ -76,20 +85,12 @@ def register():
                 return redirect(url_for('login')), 302, headers
             else:
                 flash('Registration was a faulure', 'success')
-        r = make_response(render_template('register.html', form=form))
-        r.headers["Content-Security-Policy"] = "default-src 'self'"
-        r.headers["Content-Security-Policy"] = "frame-ancestors 'none'"
-        r.headers["X-Content-Type-Options"] = "nosniff"
-        r.headers["X-Frame-Options"] = "deny"
-        r.headers["X-XSS-Protection"] = "1; mode=block"    
+        r = CreateResponse(render_template('register.html', form=form))
+        
         return r
     except Exception as e:
-        r = make_response(str(e), 500)
-        r.headers["Content-Security-Policy"] = "default-src 'self'"
-        r.headers["Content-Security-Policy"] = "frame-ancestors 'none'"
-        r.headers["X-Content-Type-Options"] = "nosniff"
-        r.headers["X-Frame-Options"] = "deny"
-        r.headers["X-XSS-Protection"] = "1; mode=block"    
+        r = CreateResponse(str(e), 500)
+          
         return r
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -116,20 +117,12 @@ def login():
 
             return redirect(url_for('spell_check')), 302, headers
     except Exception as e:
-        r = make_response(str(e), 500)
-        r.headers["Content-Security-Policy"] = "default-src 'self'"
-        r.headers["Content-Security-Policy"] = "frame-ancestors 'none'"
-        r.headers["X-Content-Type-Options"] = "nosniff"
-        r.headers["X-Frame-Options"] = "deny"
-        r.headers["X-XSS-Protection"] = "1; mode=block"    
+        r = CreateResponse(str(e), 500)
+           
         return r
 
-    r = make_response(render_template('login.html', form=form))
-    r.headers["Content-Security-Policy"] = "default-src 'self'"
-    r.headers["Content-Security-Policy"] = "frame-ancestors 'none'"
-    r.headers["X-Content-Type-Options"] = "nosniff"
-    r.headers["X-Frame-Options"] = "deny"
-    r.headers["X-XSS-Protection"] = "1; mode=block"   
+    r = CreateResponse(render_template('login.html', form=form))
+     
     return r
 
 def validate_user(user):
@@ -174,29 +167,17 @@ def spell_check():
             msg = msg.rstrip(', ')
             
             sc_form.misspelled.data = msg
-            r = make_response(render_template('sc_results.html', form=sc_form))
-            r.headers["Content-Security-Policy"] = "default-src 'self'"
-            r.headers["Content-Security-Policy"] = "frame-ancestors 'none'"
-            r.headers["X-Content-Type-Options"] = "nosniff"
-            r.headers["X-Frame-Options"] = "deny"
-            r.headers["X-XSS-Protection"] = "1; mode=block"
+            r = CreateResponse(render_template('sc_results.html', form=sc_form))
+            
             return r
 
     except Exception as e:
-        r = make_response(str(e), 500)
-        r.headers["Content-Security-Policy"] = "default-src 'self'"
-        r.headers["Content-Security-Policy"] = "frame-ancestors 'none'"
-        r.headers["X-Content-Type-Options"] = "nosniff"
-        r.headers["X-Frame-Options"] = "deny"
-        r.headers["X-XSS-Protection"] = "1; mode=block"    
+        r = CreateResponse(str(e), 500)
+        
         return r
 
-    r = make_response(render_template('spell_check.html', form=form))
-    r.headers["Content-Security-Policy"] = "default-src 'self'"
-    r.headers["Content-Security-Policy"] = "frame-ancestors 'none'"
-    r.headers["X-Content-Type-Options"] = "nosniff"
-    r.headers["X-Frame-Options"] = "deny"
-    r.headers["X-XSS-Protection"] = "1; mode=block"
+    r = CreateResponse(render_template('spell_check.html', form=form))
+    
     return r
 
 @app.route('/sc_results', methods=['GET'])
@@ -213,18 +194,35 @@ def sc_results():
             return redirect(url_for('spell_check')), 302, headers
 
     except Exception as e:
-        r = make_response(str(e), 500)
-        r.headers["Content-Security-Policy"] = "default-src 'self'"
-        r.headers["Content-Security-Policy"] = "frame-ancestors 'none'"
-        r.headers["X-Content-Type-Options"] = "nosniff"
-        r.headers["X-Frame-Options"] = "deny"
-        r.headers["X-XSS-Protection"] = "1; mode=block"    
+        r = CreateResponse(str(e), 500)
+         
         return r
     
-    r = make_response(render_template('sc_results.html', form=form))
+    r = CreateResponse(render_template('sc_results.html', form=form))
+    
+    return r
+
+def CreateResponse(resp, status_code = None):
+    
+    if status_code:
+        r = make_response(resp, status_code)
+    else:
+        r = make_response(resp)
+    
     r.headers["Content-Security-Policy"] = "default-src 'self'"
     r.headers["Content-Security-Policy"] = "frame-ancestors 'none'"
+    r.headers["Content-Security-Policy"] = "worker-src 'self'"
+    r.headers["Content-Security-Policy"] = "script-src 'self'"
+    r.headers["Content-Security-Policy"] = "style-src 'self'"
+    r.headers["Content-Security-Policy"] = "img-src 'none'"
+    r.headers["Content-Security-Policy"] = "connect-src 'self'"
+    r.headers["Content-Security-Policy"] = "font-src 'self'"
+    r.headers["Content-Security-Policy"] = "media-src 'self'"
+    r.headers["Content-Security-Policy"] = "manifest-src 'self'"
+    r.headers["Content-Security-Policy"] = "objec-src 'self'"
+    r.headers["Content-Security-Policy"] = "prefetch-src 'self'"
     r.headers["X-Content-Type-Options"] = "nosniff"
-    r.headers["X-Frame-Options"] = "deny"
+    r.headers["X-Frame-Options"] = "DENY"
     r.headers["X-XSS-Protection"] = "1; mode=block"
+
     return r
