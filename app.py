@@ -6,18 +6,13 @@ import re
 import os
 import subprocess
 from datetime import datetime
-import app_forms
+from . import app_forms
+from . import create_app
 
-app = Flask(__name__)
+app = create_app()
 SECRET_KEY = os.urandom(32)
-app.config['SECRET_KEY'] = SECRET_KEY
 csrf = CSRFProtect(app)
-SESSION_TYPE = 'filesystem'
-app.config['SESSION_TYPE'] = SESSION_TYPE
 Session(app)
-app.config['SESSION_COOKIE_SECURE'] = True
-app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 registration_info = []
 logged_in_user = []
